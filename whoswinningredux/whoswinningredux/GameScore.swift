@@ -9,16 +9,13 @@ import Foundation
 import SwiftData
 import RealmSwift
 
-@Model
-class GameScores: Codable {
+struct GameScores: Codable {
+    let gameName : String
+    var highScoreWinner : Bool
     
-    var gameName = ""
-    var highScoreWinner = true
+    let gameDate : Date
     
-    @Attribute(.unique)
-    var gameDate = Date()
-    
-    var players = [GamePlayer]()
+    var players : [GamePlayer]
     
     init(gameName: String = "", highScoreWinner: Bool = true, gameDate: Date = Date(), players: [GamePlayer] = [GamePlayer]()) {
         self.gameName = gameName
@@ -34,7 +31,7 @@ class GameScores: Codable {
         case players
     }
         
-    required init(from decoder:Decoder) throws {
+    init(from decoder:Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
         gameName = try values.decode(String.self, forKey: .gameName)
         highScoreWinner = try values.decode(Bool.self, forKey: .highScoreWinner)
@@ -50,14 +47,14 @@ class GameScores: Codable {
         try container.encode(players, forKey: .players)
     }
     
-    func removePlayer(userIndex: Int) {
+    mutating func removePlayer(userIndex: Int) {
         players.remove(at: userIndex)
     }
     
     func winningIndex() -> [Int] {
         var winners = [Int]()
         var winningScore = 0
-        var scoreAdjustment = highScoreWinner ? 1 : -1
+        let scoreAdjustment = highScoreWinner ? 1 : -1
         
         for playerIndex in 0..<players.count {
             if (players[playerIndex].currentScore() * scoreAdjustment > winningScore) {
@@ -73,60 +70,26 @@ class GameScores: Codable {
     }
     
     func saveToPrefs() {
-        let prefs = UserDefaults.standard
         
         do {
-            prefs.set(try JSONEncoder().encode(self), forKey: "currentGame")
-            
-            // not using apply in background to aovid losing data if the app closes suddenly
-            prefs.synchronize()
-        } catch (let e) {
+            UserDefaults().set(try JSONEncoder().encode(self), forKey: "currentGame")
+            UserDefaults().synchronize()            
+        } catch {
             
         }
     }
     
-    /*
-     func prepRoom(context: Context) : AppDatabase {
-     return Room.databaseBuilder(
-     context,
-     AppDatabase::class.java, "database-name"
-     ).build()
-     }
-     
-     func prepRealm(context: Context) {
-     Realm.init(context)
-     let realmConfig = RealmConfiguration.Builder()
-     .name("whoswinning.realm")
-     .schemaVersion(1)
-     .build()
-     Realm.setDefaultConfiguration(realmConfig);
-     }
-     
-     func dateString(epochSeconds: Long) : String {
-     let epochLocalInstant = Instant.ofEpochSecond(epochSeconds).atZone(ZonedDateTime.now().zone)
-     
-     return (String.format("%04d%02d%02d%02d%02d%02d",
-     epochLocalInstant.year,
-     epochLocalInstant.month,
-     epochLocalInstant.dayOfMonth,
-     epochLocalInstant.hour,
-     epochLocalInstant.minute,
-     epochLocalInstant.second,
-     )
-     )
-     }
-     */
 }
 
-class GamePlayer: Codable {
-    var name = ""
-    var scoreList = [Int]()
+struct GamePlayer: Codable {
+    var name: String
+    var scoreList : [GamePlayerScore]
     
-    func addScore(newScore: Int) {
-        scoreList.append(newScore)
+    mutating func addScore(newScore: Int) {
+        scoreList.append(GamePlayerScore(_id: 0, gamePlayerId: 0, score: newScore))
     }
     
-    func removeScore(scoreIndex: Int) {
+    mutating func removeScore(scoreIndex: Int) {
         scoreList.remove(at: scoreIndex)
     }
     
@@ -134,9 +97,20 @@ class GamePlayer: Codable {
         var scoreTotal = 0
         
         for score in scoreList {
-            scoreTotal += score
+            scoreTotal += score.score
         }
         
         return scoreTotal
     }
 }
+
+struct GamePlayerScore: Codable, Hashable {
+    let _id: Int
+    let gamePlayerId: Int
+    var score: Int
+
+    mutating func setInitialScore(newScore: Int) {
+        score = newScore
+    }
+}
+
