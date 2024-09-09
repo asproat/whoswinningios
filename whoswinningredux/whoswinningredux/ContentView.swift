@@ -18,7 +18,7 @@ struct ContentView: View {
     @State var playersPlusAddCount = 0
     @State var listExpanded = false
     @State var currentScoreList: [GamePlayerScore] = []
-
+    
     @State var stackMaxWidth: CGFloat = 0.0
     @State var activePlayerRightSide: CGFloat = -1 * cardShadowWidth
     
@@ -170,7 +170,7 @@ struct ContentView: View {
      showConfirmClose = false
      }
      */
-
+    
     func settingsVerticalShadow(metrics: GeometryProxy,
                                 activePlayerOffset: CGFloat = 0.0
     ) -> some View {
@@ -178,38 +178,37 @@ struct ContentView: View {
             // top right corner of card
             path.move(to:
                         CGPoint(x: 0.0 +
-                                ContentView.cardPadding +
+                                //ContentView.cardPadding +
                                 activePlayerOffset,
                                 y: 0.0))
             // top right corner of shadow
             path.addLine(to:
                             CGPoint(x: 0.0 +
-                                    ContentView.cardPadding * 2 +
+                                    //ContentView.cardPadding * 2 +
                                     ContentView.cardShadowWidth +
                                     activePlayerOffset,
                                     y: 0.0))
             // bottom right corner of shadow
             path.addLine(to:
                             CGPoint(x: 0.0 +
-                                    ContentView.cardPadding * 2 +
+                                    //ContentView.cardPadding * 2 +
                                     ContentView.cardShadowWidth +
                                     activePlayerOffset,
-                                    y: metrics.size.height * 0.9 +
-                                    ContentView.cardShadowWidth +
-                                    ContentView.cardPadding * 2))
+                                    y: (metrics.size.height * 0.9 -
+                                        ContentView.cardPadding * 3) +
+                                    ContentView.cardShadowWidth
+                                   ))
             
-            // bottom right corner of card
+            // bottom left corner of card
             path.addLine(to:
                             CGPoint(x: 0.0 +
-                                    ContentView.cardPadding +
-                                    activePlayerOffset +
                                     activePlayerOffset,
-                                    y: metrics.size.height * 0.9 +
-                                    ContentView.cardPadding))
-            // top right corner of card
+                                    y: (metrics.size.height  * 0.9 -
+                                        (ContentView.cardPadding * 3))))
+            // top left corner of card
             path.addLine(to:
                             CGPoint(x: 0.0 +
-                                    ContentView.cardPadding +
+                                    //ContentView.cardPadding +
                                     activePlayerOffset,
                                     y: 0.0))
         }
@@ -218,7 +217,7 @@ struct ContentView: View {
                            startPoint: .leading,
                            endPoint: .trailing)
         )
-
+        
     }
     
     func playerHorizontalShadow(playerIndex: Int) -> some View {
@@ -231,7 +230,7 @@ struct ContentView: View {
             path.addLine(to:
                             CGPoint(x: playerWidths[playerIndex] +
                                     (activePlayerIndex == playerIndex ? 0.0 : (ContentView.cardShadowWidth -
-                                         ContentView.cardPadding)) +
+                                                                               ContentView.cardPadding)) +
                                     ContentView.cardPadding,
                                     y: 0))
             // bottom right corner of shadow
@@ -252,7 +251,7 @@ struct ContentView: View {
         .fill(
             LinearGradient(colors: [ .gray, .white], startPoint: .top, endPoint: .bottom)
         )
-
+        
     }
     
     func settingsHorizontalShadow() -> some View {
@@ -263,19 +262,18 @@ struct ContentView: View {
                                 y: 0))
             // top right corner of shadow
             path.addLine(to:
-                            CGPoint(x: settingsWidth +
-                                    ContentView.cardPadding,
+                            CGPoint(x: settingsWidth - ContentView.cardPadding,
                                     y: 0))
             // bottom right corner of shadow
             path.addLine(to:
                             CGPoint(x: settingsWidth +
                                     ContentView.cardShadowWidth,
-                                    y: ContentView.cardShadowWidth - ContentView.cardPadding))
+                                    y: ContentView.cardShadowWidth))
             
             // bottom left corner of shadow
             path.addLine(to:
                             CGPoint(x: 0.0,
-                                    y: ContentView.cardShadowWidth  - ContentView.cardPadding))
+                                    y: ContentView.cardShadowWidth))
             // top right corner of card
             path.addLine(to:
                             CGPoint(x: 0,
@@ -284,7 +282,7 @@ struct ContentView: View {
         .fill(
             LinearGradient(colors: [ .gray, .white], startPoint: .top, endPoint: .bottom)
         )
-
+        
     }
     
     func playerColumn(playerIndex: Int, metrics: GeometryProxy) -> some View {
@@ -311,7 +309,7 @@ struct ContentView: View {
             }
             .frame(alignment: .topLeading
             )
-
+            
             VStack(alignment: .trailing) {
                 if (listExpanded &&
                     activePlayerIndex == playerIndex
@@ -327,7 +325,7 @@ struct ContentView: View {
                                 showRemoveScore = true
                             }
                             .frame(alignment: .trailing)
-                            .border(.purple)
+                            //.border(.purple)
                         }
                     }
                     .frame(alignment: .trailing)
@@ -349,46 +347,46 @@ struct ContentView: View {
                     }
             }
             .frame(minWidth: playerWidths[playerIndex] - ContentView.cardPadding * 2,
-                   alignment: Alignment(horizontal: .trailing, vertical: .top))
-
-            if activePlayerIndex == playerIndex &&
-                !fromHistory {
-                
-                HStack() {
-                    Image(systemName: "plus.circle")
-                        .onTapGesture {
-                            newScore += 1
-                            newScoreString = "\(newScore)"
-                        }
-                    TextField(newScoreString, text: $newScoreString)
-                        .lineLimit(1)
-                        .multilineTextAlignment(.trailing)
-                        .focused($fieldFocus, equals: .score)
-                        .onReceive(NotificationCenter.default.publisher(for: UITextField.textDidBeginEditingNotification)) { obj in
-                            if let textField = obj.object as? UITextField {
-                                textField.selectedTextRange = textField.textRange(from: textField.beginningOfDocument, to: textField.endOfDocument)
+                   maxWidth: playerWidths[playerIndex] - ContentView.cardPadding * 2,
+                alignment: Alignment(horizontal: .trailing, vertical: .top))
+            
+            VStack() {
+                if activePlayerIndex == playerIndex &&
+                    !fromHistory {
+                    HStack() {
+                        Image(systemName: "plus.circle")
+                            .onTapGesture {
+                                newScore += 1
+                                newScoreString = "\(newScore)"
                             }
-                        }
-                        .onSubmit {
-                            newScore = Int(newScoreString) ?? 0
-                            addScore(
-                                playerIndex: playerIndex,
-                                newScore: newScore
-                            )
-                            newScore = 0
-                            newScoreString = "\(newScore)"
-                            fieldFocus = .score
-                        }
-                        .keyboardType(.numberPad)
-                    Image(systemName: "minus.circle")
-                        .onTapGesture {
-                            newScore -= 1
-                            newScoreString = "\(newScore)"
-                            fieldFocus = .score
-                        }
-                }
-                
-                HStack() {
+                        TextField(newScoreString, text: $newScoreString)
+                            .lineLimit(1)
+                            .multilineTextAlignment(.trailing)
+                            .focused($fieldFocus, equals: .score)
+                            .onReceive(NotificationCenter.default.publisher(for: UITextField.textDidBeginEditingNotification)) { obj in
+                                if let textField = obj.object as? UITextField {
+                                    textField.selectedTextRange = textField.textRange(from: textField.beginningOfDocument, to: textField.endOfDocument)
+                                }
+                            }
+                            .onSubmit {
+                                newScore = Int(newScoreString) ?? 0
+                                addScore(
+                                    playerIndex: playerIndex,
+                                    newScore: newScore
+                                )
+                                newScore = 0
+                                newScoreString = "\(newScore)"
+                                fieldFocus = .score
+                            }
+                            .keyboardType(.numberPad)
+                        Image(systemName: "minus.circle")
+                            .onTapGesture {
+                                newScore -= 1
+                                newScoreString = "\(newScore)"
+                                fieldFocus = .score
+                            }
+                    }
+                    
                     Button(
                         action: {
                             newScore = Int(newScoreString) ?? 0
@@ -404,6 +402,7 @@ struct ContentView: View {
                             Image(systemName: "checkmark")
                         }
                     )
+                    Spacer()
                     Button(
                         action: {
                             removePlayer = playerIndex
@@ -414,18 +413,20 @@ struct ContentView: View {
                         }
                     )
                 }
+                
             }
-            Spacer()
-        playerHorizontalShadow(playerIndex: playerIndex)
-            .border(.blue)
-            .offset(x: 0,
-                    y: ContentView.cardShadowWidth + ContentView.cardPadding)
-            .frame(width: playerWidths[playerIndex],
-                   height: ContentView.cardShadowWidth)
+            
+            playerHorizontalShadow(playerIndex: playerIndex)
+            //.border(.blue)
+                .offset(x: 0,
+                        y: ContentView.cardShadowWidth + ContentView.cardPadding)
+                .frame(width: playerWidths[playerIndex],
+                       height: ContentView.cardShadowWidth)
         }
+        .border(.teal)
         .padding(ContentView.cardPadding)
-        .border(.primary)
         .frame(maxWidth: playerWidths[playerIndex],
+               minHeight: metrics.size.height * 0.9,
                maxHeight: metrics.size.height * 0.9,
                alignment: .topLeading)
         
@@ -436,14 +437,14 @@ struct ContentView: View {
             ScrollView()
             {
                 HStack(alignment: .top, spacing: 0) {
-                        ForEach(0..<playersPlusAddCount, id: \.self) { playerIndex in
-                            playerColumn(playerIndex: playerIndex, metrics: metrics)
-                                .border(.primary)
-                                .frame(maxWidth: playerWidths[playerIndex],
-                                       maxHeight: metrics.size.height * 0.90,
-                                       alignment: .topLeading)
-
-                        }
+                    ForEach(0..<playersPlusAddCount, id: \.self) { playerIndex in
+                        playerColumn(playerIndex: playerIndex, metrics: metrics)
+                            .border(.primary)
+                            .frame(maxWidth: playerWidths[playerIndex],
+                                   maxHeight: metrics.size.height * 0.90,
+                                   alignment: .topLeading)
+                        
+                    }
                     VStack() {
                         GeometryReader{ settingsMetrics in
                             ZStack(alignment: .topLeading) {
@@ -532,7 +533,10 @@ struct ContentView: View {
                                                 label: {
                                                     Text(NSLocalizedString("choose_first", comment: ""))
                                                 })
+                                            .padding(10)
                                         }
+                                        
+                                        Spacer()
                                         
                                         Button(
                                             action: {
@@ -551,47 +555,55 @@ struct ContentView: View {
                                                 }
                                             },
                                             label: {
-                                                Image(systemName:  "flag.checkered")
+                                                Image(systemName: "flag.checkered")
                                             })
+                                        .padding(10)
                                     }
                                 }
+                                .border(.primary)
                                 .coordinateSpace(name: "Settings")
-                                .frame(maxWidth: settingsWidth, maxHeight: metrics.size.height * 0.90,
+                                .padding(ContentView.cardPadding)
+                                .frame(minWidth: settingsWidth, maxWidth: settingsWidth,
+                                       minHeight: metrics.size.height * 0.9,
+                                       maxHeight: metrics.size.height * 0.9,
                                        alignment: .top
                                 )
-                                .padding(ContentView.cardPadding)
-                                .border(.red)
                                 .zIndex(1)
                                 
                                 settingsHorizontalShadow()
-                                .zIndex(2)
+                                    .zIndex(2)
+                                //.border(.green)
                                     .offset(x: ContentView.cardPadding,
-                                        y: metrics.size.height * 0.9 + ContentView.cardPadding * 2)
-                                    .frame(width: settingsWidth + ContentView.cardShadowWidth,
-                                           height: ContentView.cardShadowWidth - ContentView.cardPadding)
-
+                                            y: metrics.size.height * 0.9 - ContentView.cardPadding)
+                                    .frame(minWidth: settingsWidth +
+                                           ContentView.cardShadowWidth,
+                                           maxWidth: settingsWidth +
+                                           ContentView.cardShadowWidth,
+                                           minHeight: ContentView.cardShadowWidth,
+                                           maxHeight: ContentView.cardShadowWidth)
+                                
                                 settingsVerticalShadow(metrics: metrics)
-                                .zIndex(0)
-                                .offset(x: settingsWidth + ContentView.cardPadding,
-                                        y: ContentView.cardPadding)
-                                .frame(width: ContentView.cardShadowWidth)
+                                    .zIndex(3)
+                                    .offset(x: settingsWidth,
+                                            y: ContentView.cardPadding * 2)
+                                    .frame(width: ContentView.cardShadowWidth)
                                 settingsVerticalShadow(metrics: metrics)
-                                .zIndex(5)
-                                .offset(x: activePlayerRightSide,
-                                        y: ContentView.cardPadding)
-                                .frame(width: ContentView.cardShadowWidth)
-                                .background(.clear)
+                                    .zIndex(5)
+                                    .offset(x: activePlayerRightSide,
+                                            y: ContentView.cardPadding)
+                                    .frame(width: ContentView.cardShadowWidth)
+                                    .background(.clear)
                             }
+                            .frame(maxWidth: settingsWidth + ContentView.cardShadowWidth)
                         }
-
-                        }
-                    .frame(maxWidth: metrics.size.width * 0.95,
+                        
+                    }
+                    .frame(maxWidth: settingsWidth + ContentView.cardShadowWidth,
                            minHeight: metrics.size.height * 0.95,
                            maxHeight: metrics.size.height * 0.95,
                            alignment: .topLeading
                     )
-                    .border(.blue)
-
+                    
                 }
                 .frame(maxWidth: stackMaxWidth)
             }
@@ -599,7 +611,7 @@ struct ContentView: View {
             .frame(minWidth: metrics.size.width * 0.95,
                    maxHeight: metrics.size.height * 0.95,
                    alignment: .topLeading)
-            .border(.indigo)
+            //.border(.yellow)
             .onAppear() {
                 if activePlayerIndex == -2 {
                     activePlayerIndex = -1
@@ -607,13 +619,12 @@ struct ContentView: View {
             }
             .onChange(of: activePlayerIndex, {
                 if activePlayerIndex == -1 {
-                    activePlayerRightSide = -50.0
+                    activePlayerRightSide = -1.0 * metrics.size.width * 0.5
                 } else {
                     activePlayerRightSide = -1.0 *
-                        (CGFloat(playerWidths.count - 1 -
-                                activePlayerIndex) *
-                        (metrics.size.width * 0.15) -
-                         ContentView.cardPadding)
+                    (CGFloat(playerWidths.count - 1 -
+                             activePlayerIndex) *
+                     (metrics.size.width * 0.15))
                 }
                 
                 stackMaxWidth = ContentView.cardShadowWidth
@@ -634,7 +645,7 @@ struct ContentView: View {
                 }
                 fieldFocus = .score
                 DispatchQueue.main.async {
-                    print("smw: \(stackMaxWidth)")
+                    print("shw: \(ContentView.cardShadowWidth) sw: \(settingsWidth) smw: \(stackMaxWidth)")
                     UIApplication.shared.sendAction(#selector(UIResponder.selectAll(_:)), to: nil, from: nil, for: nil)
                 }
                 
