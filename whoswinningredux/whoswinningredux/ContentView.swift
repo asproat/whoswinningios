@@ -195,7 +195,7 @@ struct ContentView: View {
                                     ContentView.cardShadowWidth +
                                     activePlayerOffset,
                                     y: (metrics.size.height * 0.9 -
-                                        ContentView.cardPadding * 3) +
+                                        ContentView.cardPadding * 2) +
                                     ContentView.cardShadowWidth
                                    ))
             
@@ -204,7 +204,7 @@ struct ContentView: View {
                             CGPoint(x: 0.0 +
                                     activePlayerOffset,
                                     y: (metrics.size.height  * 0.9 -
-                                        (ContentView.cardPadding * 3))))
+                                        (ContentView.cardPadding))))
             // top left corner of card
             path.addLine(to:
                             CGPoint(x: 0.0 +
@@ -224,7 +224,7 @@ struct ContentView: View {
         Path { path in
             // bottom left corner of card
             path.move(to:
-                        CGPoint(x: 0,
+                        CGPoint(x: 0 + ContentView.cardPadding,
                                 y: 0))
             // top right corner of shadow
             path.addLine(to:
@@ -236,16 +236,19 @@ struct ContentView: View {
             // bottom right corner of shadow
             path.addLine(to:
                             CGPoint(x: playerWidths[playerIndex] +
-                                    ContentView.cardShadowWidth,
-                                    y: ContentView.cardShadowWidth - ContentView.cardPadding))
+                                    ContentView.cardShadowWidth + ContentView.cardPadding,
+                                    y: ContentView.cardShadowWidth +
+                                    (activePlayerIndex == playerIndex ? ContentView.cardShadowWidth : 0.0)
+                            )
+                        )
             
             // bottom left corner of shadow
             path.addLine(to:
-                            CGPoint(x: 0.0,
-                                    y: ContentView.cardShadowWidth  - ContentView.cardPadding))
+                            CGPoint(x: 0.0 + ContentView.cardPadding,
+                                    y: ContentView.cardShadowWidth))
             // top right corner of card
             path.addLine(to:
-                            CGPoint(x: 0,
+                            CGPoint(x: 0 + ContentView.cardPadding,
                                     y: 0))
         }
         .fill(
@@ -307,8 +310,8 @@ struct ContentView: View {
                     fieldFocus = .score
                 }
             }
-            .frame(alignment: .topLeading
-            )
+            .padding(3)
+            .frame(alignment: .topLeading)
             
             VStack(alignment: .trailing) {
                 if (listExpanded &&
@@ -325,7 +328,6 @@ struct ContentView: View {
                                 showRemoveScore = true
                             }
                             .frame(alignment: .trailing)
-                            //.border(.purple)
                         }
                     }
                     .frame(alignment: .trailing)
@@ -346,13 +348,15 @@ struct ContentView: View {
                         }
                     }
             }
+            .padding(ContentView.cardPadding)
             .frame(minWidth: playerWidths[playerIndex] - ContentView.cardPadding * 2,
                    maxWidth: playerWidths[playerIndex] - ContentView.cardPadding * 2,
-                alignment: Alignment(horizontal: .trailing, vertical: .top))
+                   alignment: Alignment(horizontal: .trailing, vertical: .top))
             
             VStack() {
-                if activePlayerIndex == playerIndex &&
-                    !fromHistory {
+                if activePlayerIndex != playerIndex {
+                    Spacer()
+                } else if !fromHistory {
                     HStack() {
                         Image(systemName: "plus.circle")
                             .onTapGesture {
@@ -360,6 +364,9 @@ struct ContentView: View {
                                 newScoreString = "\(newScore)"
                             }
                         TextField(newScoreString, text: $newScoreString)
+                            .onChange(of: newScoreString, initial: true) { oldScoreString, newScoreString in
+                                newScore = Int(newScoreString) ?? newScore
+                            }
                             .lineLimit(1)
                             .multilineTextAlignment(.trailing)
                             .focused($fieldFocus, equals: .score)
@@ -415,21 +422,12 @@ struct ContentView: View {
                 }
                 
             }
-            
-            playerHorizontalShadow(playerIndex: playerIndex)
-            //.border(.blue)
-                .offset(x: 0,
-                        y: ContentView.cardShadowWidth + ContentView.cardPadding)
-                .frame(width: playerWidths[playerIndex],
-                       height: ContentView.cardShadowWidth)
+            .padding(ContentView.cardPadding)
         }
-        .border(.teal)
-        .padding(ContentView.cardPadding)
         .frame(maxWidth: playerWidths[playerIndex],
                minHeight: metrics.size.height * 0.9,
-               maxHeight: metrics.size.height * 0.9,
                alignment: .topLeading)
-        
+
     }
     
     var body: some View {
@@ -438,12 +436,21 @@ struct ContentView: View {
             {
                 HStack(alignment: .top, spacing: 0) {
                     ForEach(0..<playersPlusAddCount, id: \.self) { playerIndex in
-                        playerColumn(playerIndex: playerIndex, metrics: metrics)
-                            .border(.primary)
-                            .frame(maxWidth: playerWidths[playerIndex],
-                                   maxHeight: metrics.size.height * 0.90,
-                                   alignment: .topLeading)
-                        
+                        VStack(spacing: 0) {
+                            playerColumn(playerIndex: playerIndex, metrics: metrics)
+                                .border(.primary)
+                                .zIndex(10)
+                                .frame(maxWidth: playerWidths[playerIndex],
+                                       minHeight: metrics.size.height * 0.90,
+                                       alignment: .topLeading)
+                            playerHorizontalShadow(playerIndex: playerIndex)
+                                .frame(width: playerWidths[playerIndex] - ContentView.cardPadding,
+                                       height: ContentView.cardShadowWidth )
+
+
+                        }
+                        .frame(maxWidth: playerWidths[playerIndex],
+                               maxHeight: metrics.size.height * 0.90 + ContentView.cardShadowWidth)
                     }
                     VStack() {
                         GeometryReader{ settingsMetrics in
@@ -460,6 +467,7 @@ struct ContentView: View {
                                                     }
                                                 }
                                             }
+                                            .frame(width: settingsWidth, alignment: .trailing)
                                     } else {
                                         if !fromHistory {
                                             
@@ -560,7 +568,6 @@ struct ContentView: View {
                                         .padding(10)
                                     }
                                 }
-                                .border(.primary)
                                 .coordinateSpace(name: "Settings")
                                 .padding(ContentView.cardPadding)
                                 .frame(minWidth: settingsWidth, maxWidth: settingsWidth,
@@ -568,13 +575,13 @@ struct ContentView: View {
                                        maxHeight: metrics.size.height * 0.9,
                                        alignment: .top
                                 )
+                                .border(.primary)
                                 .zIndex(1)
                                 
                                 settingsHorizontalShadow()
                                     .zIndex(2)
-                                //.border(.green)
                                     .offset(x: ContentView.cardPadding,
-                                            y: metrics.size.height * 0.9 - ContentView.cardPadding)
+                                            y: metrics.size.height * 0.9)
                                     .frame(minWidth: settingsWidth +
                                            ContentView.cardShadowWidth,
                                            maxWidth: settingsWidth +
@@ -585,19 +592,24 @@ struct ContentView: View {
                                 settingsVerticalShadow(metrics: metrics)
                                     .zIndex(3)
                                     .offset(x: settingsWidth,
-                                            y: ContentView.cardPadding * 2)
-                                    .frame(width: ContentView.cardShadowWidth)
+                                            y: ContentView.cardPadding)
+                                    .frame(width: ContentView.cardShadowWidth,
+                                           height: metrics.size.height * 0.9 + 
+                                           ContentView.cardShadowWidth * 2)
                                 settingsVerticalShadow(metrics: metrics)
-                                    .zIndex(5)
+                                    .zIndex(0)
                                     .offset(x: activePlayerRightSide,
                                             y: ContentView.cardPadding)
-                                    .frame(width: ContentView.cardShadowWidth)
+                                    .frame(width: ContentView.cardShadowWidth,
+                                           height: metrics.size.height * 0.9 + 
+                                           ContentView.cardShadowWidth * 2)
                                     .background(.clear)
                             }
                             .frame(maxWidth: settingsWidth + ContentView.cardShadowWidth)
                         }
                         
                     }
+                    .background(.clear)
                     .frame(maxWidth: settingsWidth + ContentView.cardShadowWidth,
                            minHeight: metrics.size.height * 0.95,
                            maxHeight: metrics.size.height * 0.95,
@@ -611,7 +623,6 @@ struct ContentView: View {
             .frame(minWidth: metrics.size.width * 0.95,
                    maxHeight: metrics.size.height * 0.95,
                    alignment: .topLeading)
-            //.border(.yellow)
             .onAppear() {
                 if activePlayerIndex == -2 {
                     activePlayerIndex = -1
