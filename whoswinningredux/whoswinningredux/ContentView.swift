@@ -677,6 +677,7 @@ struct ContentView: View {
                         playersPlusAddCount = currentGame.players.count
                         playerWidths = [CGFloat](repeating: metrics.size.width * 0.15,
                                                  count: playersPlusAddCount)
+                        winnerHighScore = currentGame.highScoreWinner
                     } else {
                         currentGame = GameScores()
                     }
