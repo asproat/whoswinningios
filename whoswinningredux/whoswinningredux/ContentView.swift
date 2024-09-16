@@ -60,12 +60,17 @@ struct ContentView: View {
     
     @State var gameSaveImage = UIImage()
     
+    /*
     init() {
+        
         if (UserDefaults().string(forKey: "currentGame") != nil) {
             do {
+                // load stored game
                 currentGame = try JSONDecoder().decode(GameScores.self,
-                                                       from: (UserDefaults().string(forKey: "currentGame") ?? "")
-                    .data(using: .utf8) ?? Data())
+                        from: UserDefaults().string(forKey: "currentGame")!.data(using: .utf8)!)
+                
+                //JSONDecoder().decode(GameScores.self,
+                //        from: UserDefaults().string(forKey: "currentGame")!.data(using:.utf8)!)
                 playersPlusAddCount = currentGame.players.count
                 
             } catch ( _) {
@@ -73,8 +78,7 @@ struct ContentView: View {
             }
         }
     }
-    
-    
+    */
     
     func updateImage() {
         gameSaveImage = UIImage()
@@ -143,10 +147,10 @@ struct ContentView: View {
             currentGame = GameScores()
         } else {
             do {
+                // load stored game
                 currentGame = try JSONDecoder().decode(GameScores.self,
-                                                       from: (UserDefaults().string(forKey: "currentGame") ?? "")
-                    .data(using: .utf8) ?? Data()
-                )
+                        from: UserDefaults().string(forKey: "currentGame")!.data(using:.utf8)!)
+                playersPlusAddCount = currentGame.players.count
             } catch ( _) {
                 currentGame = GameScores()
                 // never mind
@@ -239,8 +243,8 @@ struct ContentView: View {
                                     ContentView.cardShadowWidth + ContentView.cardPadding,
                                     y: ContentView.cardShadowWidth +
                                     (activePlayerIndex == playerIndex ? ContentView.cardShadowWidth : 0.0)
-                            )
-                        )
+                                   )
+            )
             
             // bottom left corner of shadow
             path.addLine(to:
@@ -393,6 +397,33 @@ struct ContentView: View {
                                 fieldFocus = .score
                             }
                     }
+                    .alert("confirm_remove_player", isPresented: $showRemoveUser) {
+                        Button("no") {
+                            showRemoveUser = false
+                        }
+                        
+                        Button("yes") {
+                            currentGame.removePlayer(userIndex: activePlayerIndex )
+                            playerWidths.remove(at: activePlayerIndex)
+                            currentGame.saveToPrefs()
+                            playersPlusAddCount -= 1
+                            showRemoveUser = false
+                            var currentIndex = activePlayerIndex
+                            currentIndex = currentIndex > 0 ?
+                            (currentIndex - 1) :
+                            ((currentGame.players.count > 0) ? 0 : -1)
+                            if (currentIndex != -1) {
+                                currentScoreList =
+                                currentGame.players[currentIndex].scoreList
+                            }
+                            
+                            activePlayerIndex = currentIndex
+                            stackMaxWidth -= metrics.size.width * 0.15
+                            playerWidths[activePlayerIndex] = metrics.size.width * 0.3
+                            calculateRightSide(metrics: metrics)
+                            
+                        }
+                    }
                     
                     Button(
                         action: {
@@ -427,7 +458,18 @@ struct ContentView: View {
         .frame(maxWidth: playerWidths[playerIndex],
                minHeight: metrics.size.height * 0.9,
                alignment: .topLeading)
-
+        
+    }
+    
+    func calculateRightSide(metrics: GeometryProxy) {
+        if activePlayerIndex == -1 {
+            activePlayerRightSide = -1.0 * metrics.size.width * 0.5
+        } else {
+            activePlayerRightSide = -1.0 *
+            (CGFloat(playerWidths.count - 1 -
+                     activePlayerIndex) *
+             (metrics.size.width * 0.15))
+        }
     }
     
     var body: some View {
@@ -436,6 +478,7 @@ struct ContentView: View {
             {
                 HStack(alignment: .top, spacing: 0) {
                     ForEach(0..<playersPlusAddCount, id: \.self) { playerIndex in
+                        //if playerIndex < currentGame.players.count {
                         VStack(spacing: 0) {
                             playerColumn(playerIndex: playerIndex, metrics: metrics)
                                 .border(.primary)
@@ -446,11 +489,12 @@ struct ContentView: View {
                             playerHorizontalShadow(playerIndex: playerIndex)
                                 .frame(width: playerWidths[playerIndex] - ContentView.cardPadding,
                                        height: ContentView.cardShadowWidth )
-
-
+                            
+                            
                         }
                         .frame(maxWidth: playerWidths[playerIndex],
                                maxHeight: metrics.size.height * 0.90 + ContentView.cardShadowWidth)
+                        //}
                     }
                     VStack() {
                         GeometryReader{ settingsMetrics in
@@ -594,14 +638,14 @@ struct ContentView: View {
                                     .offset(x: settingsWidth,
                                             y: ContentView.cardPadding)
                                     .frame(width: ContentView.cardShadowWidth,
-                                           height: metrics.size.height * 0.9 + 
+                                           height: metrics.size.height * 0.9 +
                                            ContentView.cardShadowWidth * 2)
                                 settingsVerticalShadow(metrics: metrics)
                                     .zIndex(0)
                                     .offset(x: activePlayerRightSide,
                                             y: ContentView.cardPadding)
                                     .frame(width: ContentView.cardShadowWidth,
-                                           height: metrics.size.height * 0.9 + 
+                                           height: metrics.size.height * 0.9 +
                                            ContentView.cardShadowWidth * 2)
                                     .background(.clear)
                             }
@@ -624,19 +668,29 @@ struct ContentView: View {
                    maxHeight: metrics.size.height * 0.95,
                    alignment: .topLeading)
             .onAppear() {
+                
+                do {
+                    // load stored game
+                    if let storedGame = UserDefaults().string(forKey: "currentGame") {
+                        currentGame = try JSONDecoder().decode(GameScores.self,
+                                        from: storedGame.data(using: .utf8)!)
+                        playersPlusAddCount = currentGame.players.count
+                        playerWidths = [CGFloat](repeating: metrics.size.width * 0.15,
+                                                 count: playersPlusAddCount)
+                    } else {
+                        currentGame = GameScores()
+                    }
+                } catch ( _) {
+                    // never mind
+                }
+
                 if activePlayerIndex == -2 {
                     activePlayerIndex = -1
                 }
+                
             }
             .onChange(of: activePlayerIndex, {
-                if activePlayerIndex == -1 {
-                    activePlayerRightSide = -1.0 * metrics.size.width * 0.5
-                } else {
-                    activePlayerRightSide = -1.0 *
-                    (CGFloat(playerWidths.count - 1 -
-                             activePlayerIndex) *
-                     (metrics.size.width * 0.15))
-                }
+                calculateRightSide(metrics: metrics)
                 
                 stackMaxWidth = ContentView.cardShadowWidth
                 if activePlayerIndex == -1 {

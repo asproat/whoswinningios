@@ -7,7 +7,6 @@
 
 import Foundation
 import SwiftData
-import RealmSwift
 
 struct GameScores: Codable {
     let gameName : String
@@ -53,7 +52,7 @@ struct GameScores: Codable {
     
     func winningIndex() -> [Int] {
         var winners = [Int]()
-        var winningScore = 0
+        var winningScore = highScoreWinner ? 0 : Int.min
         let scoreAdjustment = highScoreWinner ? 1 : -1
         
         for playerIndex in 0..<players.count {
@@ -72,8 +71,9 @@ struct GameScores: Codable {
     func saveToPrefs() {
         
         do {
-            UserDefaults().set(try JSONEncoder().encode(self), forKey: "currentGame")
-            UserDefaults().synchronize()            
+            UserDefaults().set(String(data: try JSONEncoder().encode(self), encoding: .utf8),
+                    forKey: "currentGame")
+            UserDefaults().synchronize()
         } catch {
             
         }

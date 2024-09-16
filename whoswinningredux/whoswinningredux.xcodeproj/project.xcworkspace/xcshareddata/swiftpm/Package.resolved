@@ -7,7 +7,7 @@
       "location" : "https://github.com/realm/realm-cocoa",
       "state" : {
         "branch" : "master",
-        "revision" : "21ac01d5ae30dcc156e0e43e47c4afe39cc0367f"
+        "revision" : "c21605e847fc76f66c9d4c49ad0799c26d72edd4"
       }
     },
     {
@@ -15,8 +15,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/realm/realm-core.git",
       "state" : {
-        "revision" : "9cf7ef4ad8e2f4c7a519c9a395ca3d253bb87aa8",
-        "version" : "14.6.2"
+        "revision" : "b36f2436c2746c32b1f93dcc06ea8b859671a767",
+        "version" : "14.12.1"
       }
     }
   ],
