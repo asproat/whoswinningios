@@ -417,11 +417,12 @@ struct ContentView: View {
                                 currentGame.players[currentIndex].scoreList
                             }
                             
-                            activePlayerIndex = currentIndex
                             stackMaxWidth -= metrics.size.width * 0.15
-                            playerWidths[activePlayerIndex] = metrics.size.width * 0.3
+                            if currentIndex >= 0 {
+                                playerWidths[currentIndex] = metrics.size.width * 0.3
+                            }
+                            activePlayerIndex = currentIndex
                             calculateRightSide(metrics: metrics)
-                            
                         }
                     }
                     
@@ -502,7 +503,7 @@ struct ContentView: View {
                                 
                                 VStack() {
                                     if activePlayerIndex != -1 {
-                                        Image(uiImage: UIImage(named:"user")!)
+                                        Image(uiImage: UIImage (named:"user")!)
                                             .onTapGesture {
                                                 activePlayerIndex = -1
                                                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
@@ -610,6 +611,23 @@ struct ContentView: View {
                                                 Image(systemName: "flag.checkered")
                                             })
                                         .padding(10)
+                                        .alert("confirm_end", isPresented: $showConfirmClose) {
+                                            Button("no") {
+                                                showConfirmClose = false
+                                            }
+                                            
+                                            Button("yes") {
+                                                currentGame = GameScores()
+                                                activePlayerIndex = -1
+                                                stackMaxWidth = 200.0
+                                                playerWidths.removeAll()
+                                                calculateRightSide(metrics: metrics)
+                                                activePlayerIndex = -1
+                                                playersPlusAddCount = 0
+                                                showConfirmClose = false
+                                            }
+                                        }
+
                                     }
                                 }
                                 .coordinateSpace(name: "Settings")
