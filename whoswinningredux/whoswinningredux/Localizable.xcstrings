@@ -29,6 +29,9 @@
         }
       }
     },
+    "Close" : {
+
+    },
     "confirm_end" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -190,6 +193,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Show Details >"
+          }
+        }
+      }
+    },
+    "standings" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Standings"
           }
         }
       }

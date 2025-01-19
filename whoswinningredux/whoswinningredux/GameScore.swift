@@ -67,7 +67,21 @@ struct GameScores: Codable {
         
         return winners
     }
-    
+
+    func standings() -> String {
+        var standings = "\(NSLocalizedString("standings", comment: "")):\n\n"
+        let scoreAdjustment = highScoreWinner ? 1 : -1
+        let sortedPlayers = players.sorted{
+                a, b in
+                return a.currentScore() * scoreAdjustment > b.currentScore() * scoreAdjustment
+            }
+        for player in sortedPlayers {
+            standings.append("\(player.name): \(player.currentScore())\n")
+        }
+        
+        return standings
+    }
+
     func saveToPrefs() {
         
         do {

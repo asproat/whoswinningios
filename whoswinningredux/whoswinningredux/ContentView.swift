@@ -18,6 +18,7 @@ struct ContentView: View {
     @State var playersPlusAddCount = 0
     @State var listExpanded = false
     @State var currentScoreList: [GamePlayerScore] = []
+    @State var showStandings = false
     
     @State var stackMaxWidth: CGFloat = 0.0
     @State var activePlayerRightSide: CGFloat = -1 * cardShadowWidth
@@ -100,6 +101,7 @@ struct ContentView: View {
         activePlayerIndex = -1
         //DispatchQueue.main.asyncAfter(deadline: .now() +  0.1) {
         activePlayerIndex = playerIndex
+        showStandings = true
         //}
     }
     
@@ -178,7 +180,8 @@ struct ContentView: View {
     func settingsVerticalShadow(metrics: GeometryProxy,
                                 activePlayerOffset: CGFloat = 0.0
     ) -> some View {
-        Path { path in
+        print("\(metrics.size) \(activePlayerOffset)")
+        return Path { path in
             // top right corner of card
             path.move(to:
                         CGPoint(x: 0.0 +
@@ -304,7 +307,7 @@ struct ContentView: View {
             )
             .truncationMode(.tail)
             .lineLimit(1)
-            .fontWeight(.bold)
+            .font(.system(size: 15.0, weight: .bold))
             .onTapGesture {
                 activePlayerIndex = playerIndex
                 listExpanded = false
@@ -368,7 +371,7 @@ struct ContentView: View {
                                 newScoreString = "\(newScore)"
                             }
                         TextField(newScoreString, text: $newScoreString)
-                            .onChange(of: newScoreString, initial: true) { oldScoreString, newScoreString in
+                            .onChange(of: newScoreString) { newScoreString in
                                 newScore = Int(newScoreString) ?? newScore
                             }
                             .lineLimit(1)
@@ -463,6 +466,7 @@ struct ContentView: View {
     }
     
     func calculateRightSide(metrics: GeometryProxy) {
+        print("CRS \(metrics.size)")
         if activePlayerIndex == -1 {
             activePlayerRightSide = -1.0 * metrics.size.width * 0.5
         } else {
@@ -524,7 +528,7 @@ struct ContentView: View {
                                                         label: { Text("") }
                                                 )
                                                 .onChange(of: winnerHighScore)
-                                                { was, it in
+                                                { it in
                                                     winnerHighScore = it
                                                     currentGame.highScoreWinner =
                                                     winnerHighScore
@@ -543,20 +547,28 @@ struct ContentView: View {
                                             }
                                             .frame(width: settingsWidth,
                                                    alignment: .topLeading)
-                                            TextField(NSLocalizedString("name_hint",
-                                                                        comment: ""), text: $newName)
-                                            .focused($fieldFocus, equals: .name)
-                                            .font(.system(size: 25))
-                                            .onSubmit {
-                                                addPlayer(newName: newName, metrics: metrics)
-                                                newName = ""
-                                            }
-                                            .onChange(of: newName) { oldName, currentName in
-                                                newName = currentName
-                                                repeatWarning =
-                                                currentGame.players.first { it in
-                                                    it.name.starts(with: currentName)
-                                                } != nil
+                                            HStack {
+                                                TextField(NSLocalizedString("name_hint",
+                                                                            comment: ""), text: $newName)
+                                                .focused($fieldFocus, equals: .name)
+                                                .font(.system(size: 25))
+                                                .onSubmit {
+                                                    addPlayer(newName: newName, metrics: metrics)
+                                                    newName = ""
+                                                }
+                                                .onChange(of: newName) { currentName in
+                                                    newName = currentName
+                                                    repeatWarning =
+                                                    currentGame.players.first { it in
+                                                        currentName != "" &&
+                                                        it.name.starts(with: currentName)
+                                                    } != nil
+                                                }
+                                                Image(systemName: "xmark.circle.fill")
+                                                    .foregroundColor(.secondary)
+                                                    .onTapGesture {
+                                                        newName = ""
+                                                    }
                                             }
                                             
                                             if repeatWarning {
@@ -574,6 +586,15 @@ struct ContentView: View {
                                             .disabled(newName.isEmpty)
                                         }
                                         
+                                        Button(
+                                            action: {
+                                                showStandings = true
+                                            },
+                                            label: {
+                                                Text(NSLocalizedString("standings", comment: ""))
+                                            })
+                                        .padding(10)
+
                                         if !fromHistory {
                                             Button(
                                                 action: {
@@ -618,11 +639,9 @@ struct ContentView: View {
                                             
                                             Button("yes") {
                                                 currentGame = GameScores()
-                                                activePlayerIndex = -1
-                                                stackMaxWidth = 200.0
+                                                stackMaxWidth = 200.0 + ContentView.cardShadowWidth
                                                 playerWidths.removeAll()
                                                 calculateRightSide(metrics: metrics)
-                                                activePlayerIndex = -1
                                                 playersPlusAddCount = 0
                                                 showConfirmClose = false
                                             }
@@ -658,14 +677,6 @@ struct ContentView: View {
                                     .frame(width: ContentView.cardShadowWidth,
                                            height: metrics.size.height * 0.9 +
                                            ContentView.cardShadowWidth * 2)
-                                settingsVerticalShadow(metrics: metrics)
-                                    .zIndex(0)
-                                    .offset(x: activePlayerRightSide,
-                                            y: ContentView.cardPadding)
-                                    .frame(width: ContentView.cardShadowWidth,
-                                           height: metrics.size.height * 0.9 +
-                                           ContentView.cardShadowWidth * 2)
-                                    .background(.clear)
                             }
                             .frame(maxWidth: settingsWidth + ContentView.cardShadowWidth)
                         }
@@ -680,6 +691,11 @@ struct ContentView: View {
                     
                 }
                 .frame(maxWidth: stackMaxWidth)
+                .alert(currentGame.standings(),
+                       isPresented: $showStandings)
+                       {
+                           Button("Close", role: .cancel) {}
+                       }
             }
             .padding(3)
             .frame(minWidth: metrics.size.width * 0.95,
@@ -708,7 +724,8 @@ struct ContentView: View {
                 }
                 
             }
-            .onChange(of: activePlayerIndex, {
+            .onChange(of: activePlayerIndex)
+            { it in
                 calculateRightSide(metrics: metrics)
                 
                 stackMaxWidth = ContentView.cardShadowWidth
@@ -733,7 +750,7 @@ struct ContentView: View {
                     UIApplication.shared.sendAction(#selector(UIResponder.selectAll(_:)), to: nil, from: nil, for: nil)
                 }
                 
-            })
+            }
         }
     }
 }
